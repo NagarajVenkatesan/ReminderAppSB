@@ -7,10 +7,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -41,7 +43,16 @@ public class ReminderService {
 	@Async
 	public void sendReminderEmail(Employee emp) {
 		Set<Integer> filledWeeks = emp.getFilledWeeks();
-		List<Integer> missedWeeks = getMissedWeeks(getCurrentWeek(), filledWeeks);
+		List<Integer> missedWeeks = new ArrayList<>();
+		if (filledWeeks != null) {
+			missedWeeks = getMissedWeeks(getCurrentWeek(), filledWeeks);
+			
+		} else {
+			Set<Integer> noFilledWeeks = new TreeSet<>();
+			noFilledWeeks.add(0);
+			missedWeeks = getMissedWeeks(getCurrentWeek(), noFilledWeeks);
+		}
+		
 		if (!missedWeeks.isEmpty()) {
 			String message = "<h2>Hello " + emp.getEmpName() + "</h2>"
 					+ "<p>Below are pending weeks. Please fill PPM</p>" + getDatesInHTML(missedWeeks);
@@ -52,6 +63,8 @@ public class ReminderService {
 			boolean sendMail = emailService.sendSimpleMail(ed);
 			if(sendMail) {
 				System.out.println("email sent to ::::"+emp.getEmpEmail());
+			} else {
+				System.out.println("email could not sent to ::::"+emp.getEmpEmail());
 			}
 		} else {
 			System.out.println("There is no pending for ::" + emp.getEmpEmail());
